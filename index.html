@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Port Authority — Traffic Intelligence</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root{--bg:#0d0d0d;--panel:#141414;--surface:#1a1a1a;--surface2:#222;--border:#2a2a2a;--accent:#e8a020;--accent2:#c45c1a;--accent3:#5a8a3c;--text:#e8e0d0;--text-muted:#6b6560;--text-dim:#9a9080;--red:#c44040;--green:#5a8a3c;}
+    *{margin:0;padding:0;box-sizing:border-box;}
+    html,body{height:100%;overflow:hidden;}
+    body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;display:flex;flex-direction:column;height:100vh;}
+    header{height:50px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 1.25rem;flex-shrink:0;}
+    .logo{display:flex;align-items:center;gap:10px;}
+    .logo-box{background:var(--accent);color:#0d0d0d;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;padding:4px 8px;border-radius:4px;}
+    .logo-name{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text);letter-spacing:.08em;}
+    .logo-sub{font-size:11px;color:var(--text-muted);}
+    .header-right{display:flex;align-items:center;gap:1.5rem;font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--text-muted);}
+    .live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:5px;animation:blink 2s infinite;}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+    .app-body{display:flex;flex:1;overflow:hidden;}
+    .left-panel{width:210px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:.9rem;gap:.85rem;overflow-y:auto;}
+    .panel-section-title{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.4rem;padding-bottom:.35rem;border-bottom:1px solid var(--border);}
+    .filter-group{display:flex;flex-direction:column;gap:.35rem;}
+    .filter-label{font-size:11px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;}
+    select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 9px;border-radius:5px;font-size:12px;font-family:'IBM Plex Sans',sans-serif;cursor:pointer;outline:none;transition:border-color .15s;}
+    select:hover,select:focus{border-color:var(--accent);}
+    option{background:#1a1a1a;}
+    .btn-reset{width:100%;background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:6px 10px;border-radius:5px;font-size:11px;font-family:'IBM Plex Mono',monospace;cursor:pointer;text-align:center;transition:all .15s;letter-spacing:.05em;}
+    .btn-reset:hover{border-color:var(--accent);color:var(--accent);}
+    .mini-kpi{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.55rem .7rem;}
+    .mini-kpi-label{font-size:9px;color:var(--text-muted);font-family:'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px;}
+    .mini-kpi-value{font-size:16px;font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--accent);line-height:1;}
+    .mini-kpi-sub{font-size:10px;color:var(--text-muted);margin-top:2px;}
+    .right-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+    .question-bar{padding:.6rem 1.1rem;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:1rem;flex-shrink:0;}
+    .question-bar label{font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--text-muted);white-space:nowrap;letter-spacing:.08em;}
+    #question-select{flex:1;max-width:520px;background:var(--surface2);border:1px solid var(--accent);color:var(--text);padding:6px 12px;border-radius:5px;font-size:12px;font-family:'IBM Plex Sans',sans-serif;cursor:pointer;outline:none;}
+    .insight-strip{background:rgba(232,160,32,.07);border-bottom:1px solid rgba(232,160,32,.18);padding:.5rem 1.1rem;font-size:12px;color:var(--text-dim);line-height:1.5;flex-shrink:0;min-height:32px;display:flex;align-items:center;justify-content:space-between;gap:1rem;}
+    .insight-strip strong{color:var(--accent);}
+    .insight-text{flex:1;}
+    .model-tag{flex-shrink:0;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;padding:3px 10px;border-radius:4px;border:1px solid rgba(232,160,32,.3);color:var(--accent);background:rgba(232,160,32,.08);white-space:nowrap;}
+    .dashboard-area{flex:1;overflow:hidden;padding:.75rem 1.1rem;display:flex;flex-direction:column;gap:.65rem;}
+    .q-view{display:none;flex-direction:column;gap:.65rem;height:100%;}
+    .q-view.active{display:flex;}
+    .chart-row{display:flex;gap:.65rem;flex:1;min-height:0;}
+    .chart-col{display:flex;flex-direction:column;gap:.65rem;flex:1;min-height:0;}
+    .chart-col.w2{flex:2;}
+    .chart-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.8rem;flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;}
+    .chart-card-title{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:2px;}
+    .chart-card-sub{font-size:11px;color:var(--text-muted);margin-bottom:.55rem;}
+    .chart-wrap{flex:1;position:relative;min-height:0;}
+    canvas{width:100%!important;height:100%!important;}
+    .kpi-row{display:flex;gap:.6rem;flex-shrink:0;}
+    .kpi-card{background:var(--surface);border:1px solid var(--border);border-top:2px solid var(--accent);border-radius:8px;padding:.6rem .8rem;flex:1;}
+    .kpi-label{font-size:9px;color:var(--text-muted);font-family:'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px;}
+    .kpi-value{font-size:18px;font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--text);line-height:1;}
+    .kpi-sub{font-size:10px;color:var(--text-muted);margin-top:2px;}
+    .kpi-model{font-size:9px;color:var(--accent);font-family:'IBM Plex Mono',monospace;margin-top:4px;}
+    .badge{display:inline-block;padding:2px 6px;border-radius:3px;font-size:9px;font-family:'IBM Plex Mono',monospace;margin-top:3px;}
+    .badge-g{background:rgba(90,138,60,.2);color:#7ab84e;}
+    .badge-r{background:rgba(196,64,64,.2);color:#e05050;}
+    .badge-y{background:rgba(232,160,32,.15);color:var(--accent);}
+    .table-scroll{overflow:auto;flex:1;}
+    table{width:100%;border-collapse:collapse;font-size:11px;}
+    th{text-align:left;padding:6px 9px;background:var(--surface2);color:var(--text-muted);font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap;}
+    td{padding:5px 9px;border-bottom:1px solid var(--border);color:var(--text);white-space:nowrap;}
+    tr:hover td{background:var(--surface2);}
+    .ibar-wrap{display:flex;align-items:center;gap:6px;}
+    .ibar{height:5px;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));}
+    .loading-msg{display:flex;align-items:center;justify-content:center;flex:1;color:var(--text-muted);font-family:'IBM Plex Mono',monospace;font-size:12px;gap:10px;}
+    .spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <div class="logo-box">PA</div>
+    <div>
+      <div class="logo-name">PORT AUTHORITY NY & NJ</div>
+      <div class="logo-sub">Bridge & Tunnel Traffic Intelligence · 2015–2025</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span><span class="live-dot"></span>SUPABASE CONNECTED</span>
+    <span>8 FACILITIES · 29,445 RECORDS</span>
+  </div>
+</header>
+
+<div class="app-body">
+  <div class="left-panel">
+    <div>
+      <div class="panel-section-title">Filters</div>
+      <div class="filter-group">
+        <div class="filter-label">Facility</div>
+        <select id="f-facility" onchange="applyFilters()">
+          <option value="all">All Facilities</option>
+          <option value="Bayonne">Bayonne</option>
+          <option value="GWB Lower">GWB Lower</option>
+          <option value="GWB PIP">GWB PIP</option>
+          <option value="GWB Upper">GWB Upper</option>
+          <option value="Goethals">Goethals</option>
+          <option value="Holland">Holland</option>
+          <option value="Lincoln">Lincoln</option>
+          <option value="Outerbridge">Outerbridge</option>
+        </select>
+      </div>
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Year</div>
+      <select id="f-year" onchange="applyFilters()">
+        <option value="all">All Years</option>
+        <option value="2015">2015</option><option value="2016">2016</option>
+        <option value="2017">2017</option><option value="2018">2018</option>
+        <option value="2019">2019</option><option value="2020">2020 (COVID)</option>
+        <option value="2021">2021</option><option value="2022">2022</option>
+        <option value="2023">2023</option><option value="2024">2024</option>
+        <option value="2025">2025</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Metric Focus</div>
+      <select id="f-metric" onchange="applyFilters()">
+        <option value="volume">Traffic Volume</option>
+        <option value="violations">Violations</option>
+        <option value="ezpass">EZPass Ratio</option>
+      </select>
+    </div>
+    <button class="btn-reset" onclick="resetFilters()">↺ RESET FILTERS</button>
+    <div>
+      <div class="panel-section-title">Model Results</div>
+      <div class="mini-kpi">
+        <div class="mini-kpi-label">Regression R²</div>
+        <div class="mini-kpi-value">0.9791</div>
+        <div class="mini-kpi-sub">H2O Regression · Stacked Ensemble</div>
+      </div>
+    </div>
+    <div class="mini-kpi">
+      <div class="mini-kpi-label">Classification AUC</div>
+      <div class="mini-kpi-value">0.9985</div>
+      <div class="mini-kpi-sub">H2O Classification · Gradient Boosting</div>
+    </div>
+    <div class="mini-kpi">
+      <div class="mini-kpi-label">Forecast SMAPE</div>
+      <div class="mini-kpi-value">5.23%</div>
+      <div class="mini-kpi-sub">AutoTS · Horizontal Ensemble</div>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <div class="question-bar">
+      <label>SELECT QUESTION →</label>
+      <select id="question-select" onchange="showQuestion(this.value)">
+        <option value="q1">Q1 · Top 5 Factors Affecting Bridge & Tunnel Usage</option>
+        <option value="q2">Q2 · Toll Violations by Time Period & Facility</option>
+        <option value="q3">Q3 · Busiest Times & Seasonal Traffic Patterns</option>
+        <option value="q4">Q4 · Congestion Pricing Impact in 2025</option>
+        <option value="q5">Q5 · Facility Usage Forecasts to 2032</option>
+      </select>
+    </div>
+    <div class="insight-strip">
+      <div class="insight-text" id="insight-text">Select a question and use the filters on the left to explore the data.</div>
+      <div class="model-tag" id="model-tag">SELECT A QUESTION</div>
+    </div>
+    <div class="dashboard-area">
+      <div class="loading-msg" id="loading-msg"><div class="spinner"></div> Loading data from Supabase...</div>
+
+      <!-- Q1 -->
+      <div class="q-view" id="q1">
+        <div class="kpi-row">
+          <div class="kpi-card"><div class="kpi-label">Top Factor</div><div class="kpi-value">75.18%</div><div class="kpi-sub">Facility Identity</div><div class="kpi-model">H2O Regression · Stacked Ensemble</div></div>
+          <div class="kpi-card"><div class="kpi-label">2nd Factor</div><div class="kpi-value">13.04%</div><div class="kpi-sub">EZPass Ratio</div><div class="kpi-model">H2O Regression · Stacked Ensemble</div></div>
+          <div class="kpi-card"><div class="kpi-label">Model R²</div><div class="kpi-value">0.9791</div><div class="kpi-sub">97.91% variance explained</div><div class="kpi-model">H2O Regression · Stacked Ensemble</div></div>
+          <div class="kpi-card"><div class="kpi-label">RMSE</div><div class="kpi-value">2,718</div><div class="kpi-sub">vehicles/day · Python test set</div><div class="kpi-model">Python Replica · Gradient Boosting</div></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-col w2">
+            <div class="chart-card" style="flex:1.4;">
+              <div class="chart-card-title">Feature Importance Ranking</div>
+              <div class="chart-card-sub">Top 10 predictors — H2O Regression · Stacked Ensemble (282 models trained)</div>
+              <div class="table-scroll">
+                <table><thead><tr><th>#</th><th>Feature</th><th>Category</th><th>Importance</th><th>Visual</th></tr></thead>
+                <tbody id="fi-tbody"></tbody></table>
+              </div>
+            </div>
+            <div class="chart-card" style="flex:1;">
+              <div class="chart-card-title">Top 5 Factors — Importance Bar Chart</div>
+              <div class="chart-card-sub">H2O Regression · Stacked Ensemble · GBM base models + GBM metalearner</div>
+              <div class="chart-wrap"><canvas id="fiBarChart"></canvas></div>
+            </div>
+          </div>
+          <div class="chart-card" style="flex:1;">
+            <div class="chart-card-title">Category Breakdown</div>
+            <div class="chart-card-sub">Grouped importance by feature type</div>
+            <div class="chart-wrap"><canvas id="fiPieChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q2 -->
+      <div class="q-view" id="q2">
+        <div class="kpi-row">
+          <div class="kpi-card"><div class="kpi-label">Model AUC</div><div class="kpi-value">0.9985</div><div class="kpi-sub">Near-perfect discrimination</div><div class="kpi-model">H2O Classification · Gradient Boosting</div></div>
+          <div class="kpi-card"><div class="kpi-label">Recall</div><div class="kpi-value">96.79%</div><div class="kpi-sub">High-violation days caught</div><div class="kpi-model">H2O Classification · Gradient Boosting</div></div>
+          <div class="kpi-card"><div class="kpi-label">High-Viol Days</div><div class="kpi-value">31.08%</div><div class="kpi-sub">of all facility-days</div><div class="kpi-model">Threshold: violation rate > 6.18%</div></div>
+          <div class="kpi-card"><div class="kpi-label">F1 Score</div><div class="kpi-value">0.9711</div><div class="kpi-sub">False alarm rate: 1.02%</div><div class="kpi-model">H2O Classification · Gradient Boosting</div></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-card"><div class="chart-card-title" id="q2-c1-title">Violations by Year</div><div class="chart-card-sub" id="q2-c1-sub">Total toll violations per year</div><div class="chart-wrap"><canvas id="q2Chart1"></canvas></div></div>
+          <div class="chart-card"><div class="chart-card-title" id="q2-c2-title">Violations by Facility</div><div class="chart-card-sub" id="q2-c2-sub">Total violations per crossing</div><div class="chart-wrap"><canvas id="q2Chart2"></canvas></div></div>
+          <div class="chart-card"><div class="chart-card-title" id="q2-c3-title">Violation Rate by Month</div><div class="chart-card-sub" id="q2-c3-sub">Seasonal pattern in violation rate %</div><div class="chart-wrap"><canvas id="q2Chart3"></canvas></div></div>
+        </div>
+      </div>
+
+      <!-- Q3 -->
+      <div class="q-view" id="q3">
+        <div class="kpi-row">
+          <div class="kpi-card"><div class="kpi-label">Peak Year</div><div class="kpi-value">2023</div><div class="kpi-sub">Highest network volume</div><div class="kpi-model">H2O Regression · Stacked Ensemble</div></div>
+          <div class="kpi-card"><div class="kpi-label">COVID Drop</div><div class="kpi-value">−26.83%</div><div class="kpi-sub">Holland Tunnel 2020</div><div class="kpi-model">H2O Regression · Year Feature Signal</div></div>
+          <div class="kpi-card"><div class="kpi-label">Peak Season</div><div class="kpi-value">Jun–Aug</div><div class="kpi-sub">Consistently highest volumes</div><div class="kpi-model">H2O Regression · Day of Year Feature</div></div>
+          <div class="kpi-card"><div class="kpi-label">Best Recovery</div><div class="kpi-value">+30.84%</div><div class="kpi-sub">Lincoln Tunnel 2021</div><div class="kpi-model">H2O Regression · Seasonal Decomposition</div></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-card" style="flex:2;"><div class="chart-card-title" id="q3-c1-title">Network Traffic by Year</div><div class="chart-card-sub" id="q3-c1-sub">Total vehicles across all facilities</div><div class="chart-wrap"><canvas id="q3Chart1"></canvas></div></div>
+          <div class="chart-card"><div class="chart-card-title" id="q3-c2-title">Avg Traffic by Month</div><div class="chart-card-sub" id="q3-c2-sub">Seasonal demand curve</div><div class="chart-wrap"><canvas id="q3Chart2"></canvas></div></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-card"><div class="chart-card-title">Traffic by Day of Week</div><div class="chart-card-sub" id="q3-dow-sub">Weekly commute cycle</div><div class="chart-wrap"><canvas id="trafficDowChart"></canvas></div></div>
+          <div class="chart-card" style="flex:2;"><div class="chart-card-title">Traffic by Facility Over Time</div><div class="chart-card-sub">Filtered by selected facility & year</div><div class="chart-wrap"><canvas id="facYearChart"></canvas></div></div>
+        </div>
+      </div>
+
+      <!-- Q4 -->
+      <div class="q-view" id="q4">
+        <div class="kpi-row">
+          <div class="kpi-card"><div class="kpi-label">Policy Start</div><div class="kpi-value">Jan 2025</div><div class="kpi-sub">NYC Congestion Pricing</div><div class="kpi-model">H2O Regression · Year Feature Signal</div></div>
+          <div class="kpi-card"><div class="kpi-label">GWB Upper 2024</div><div class="kpi-value">−1.46%</div><div class="kpi-sub">Only negative growth in network</div><div class="kpi-model">H2O Regression · Stacked Ensemble</div></div>
+          <div class="kpi-card"><div class="kpi-label">Bayonne Trend</div><div class="kpi-value">↑ Unique</div><div class="kpi-sub">Doubled since 2015</div><div class="kpi-model">AutoTS · Horizontal Ensemble</div></div>
+          <div class="kpi-card"><div class="kpi-label">2025 Data</div><div class="kpi-value">Jan–May</div><div class="kpi-sub">Annualized for comparison</div><div class="kpi-model">×(365/150) Extrapolation Applied</div></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-card" style="flex:2;"><div class="chart-card-title">Traffic Volume: 2023 vs 2024 vs 2025 (Annualized)</div><div class="chart-card-sub">H2O Regression + AutoTS · Horizontal Ensemble</div><div class="chart-wrap"><canvas id="cpChart"></canvas></div></div>
+          <div class="chart-card"><div class="chart-card-title">% Change 2024 → 2025</div><div class="chart-card-sub">Green = gaining · Red = losing traffic</div><div class="chart-wrap"><canvas id="cpChangeChart"></canvas></div></div>
+        </div>
+      </div>
+
+      <!-- Q5 -->
+      <div class="q-view" id="q5">
+        <div class="kpi-row">
+          <div class="kpi-card"><div class="kpi-label">Model</div><div class="kpi-value" style="font-size:13px;">Horizontal Ensemble</div><div class="kpi-sub">5 base models per facility</div><div class="kpi-model">AutoTS · Horizontal Ensemble</div></div>
+          <div class="kpi-card"><div class="kpi-label">SMAPE (Best Window)</div><div class="kpi-value">5.23%</div><div class="kpi-sub">Most recent validation window</div><div class="kpi-model">AutoTS · 2 Backwards Rolling Windows</div></div>
+          <div class="kpi-card"><div class="kpi-label">Fastest Growing</div><div class="kpi-value">Bayonne</div><div class="kpi-sub">4.3M → 5.2M by 2032</div><div class="kpi-model">AutoTS · Horizontal Ensemble · +19.3%</div></div>
+          <div class="kpi-card"><div class="kpi-label">Declining Facility</div><div class="kpi-value">GWB Upper</div><div class="kpi-sub">27.2M → 25.3M by 2032</div><div class="kpi-model">AutoTS · Congestion Pricing Effect</div></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-card" style="flex:2;"><div class="chart-card-title">Forecasted Yearly Vehicle Counts — 2025 to 2032</div><div class="chart-card-sub">AutoTS · Horizontal Ensemble · Filter by facility on left panel</div><div class="chart-wrap"><canvas id="forecastChart"></canvas></div></div>
+          <div class="chart-card">
+            <div class="chart-card-title">Forecast Table (Millions)</div>
+            <div class="chart-card-sub">All facilities · 2025–2032 · AutoTS · Horizontal Ensemble</div>
+            <div class="table-scroll">
+              <table><thead><tr><th>Year</th><th>Bayonne</th><th>GWB Lo</th><th>GWB Up</th><th>Goethals</th><th>Holland</th><th>Lincoln</th><th>Outer</th></tr></thead>
+              <tbody id="forecast-tbody"></tbody></table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL='https://sjcernwwlbuasqgxznws.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNqY2Vybnd3bGJ1YXNxZ3h6bndzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjA0MjYsImV4cCI6MjA5MjA5NjQyNn0.ROPuvEZnwXHpbjyZ_0uprveUCOKyKwdC4-si5Gdi8wY';
+const C=['#e8a020','#c45c1a','#5a8a3c','#7a6aaa','#3a7a8a','#8a4a4a','#6a8a4a','#aa7a3a'];
+const MONTH_ORDER=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MODEL_TAGS={q1:'REGRESSION MODEL',q2:'CLASSIFICATION MODEL',q3:'REGRESSION MODEL',q4:'REGRESSION + TIME SERIES',q5:'TIME SERIES MODEL'};
+const db={};
+let charts={};
+let currentQ='q1';
+
+function cOpts(extra={}){
+  return{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#9a9080',font:{family:'IBM Plex Sans',size:10},boxWidth:12}},...extra},
+    scales:{x:{ticks:{color:'#6b6560',font:{size:10}},grid:{color:'#222'}},y:{ticks:{color:'#6b6560',font:{size:10}},grid:{color:'#222'}}}};
+}
+async function ft(t,params=''){
+  const r=await fetch(`${SB_URL}/rest/v1/${t}?select=*${params}`,{headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`}});
+  return r.json();
+}
+function fmt(n){if(n>=1e6)return(n/1e6).toFixed(2)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return Math.round(n);}
+function mkChart(id,type,data,options){if(charts[id])charts[id].destroy();const ctx=document.getElementById(id);if(!ctx)return;charts[id]=new Chart(ctx.getContext('2d'),{type,data,options});}
+
+// Filter accessors
+const getFac=()=>document.getElementById('f-facility').value;
+const getYear=()=>document.getElementById('f-year').value;
+const getMetric=()=>document.getElementById('f-metric').value;
+
+// Filter granular data
+function filterMonth(fac,year,metric){
+  let rows=db.tym;
+  if(fac!=='all') rows=rows.filter(r=>r.fac_b===fac);
+  if(year!=='all') rows=rows.filter(r=>r.year===+year);
+  // aggregate by month
+  const agg={};
+  rows.forEach(r=>{
+    if(!agg[r.month_name]) agg[r.month_name]={month_name:r.month_name,month_num:r.month_num,v:0,vr:0,ez:0,cnt:0};
+    if(metric==='volume') agg[r.month_name].v+=r.avg_vehicles;
+    else if(metric==='violations') agg[r.month_name].v+=r.total_violations;
+    else agg[r.month_name].v+=r.avg_ezpass_ratio;
+    agg[r.month_name].vr+=r.avg_violation_rate;
+    agg[r.month_name].ez+=r.avg_ezpass_ratio;
+    agg[r.month_name].cnt++;
+  });
+  return MONTH_ORDER.map(m=>agg[m]?{...agg[m],v:agg[m].v/(agg[m].cnt||1),vr:agg[m].vr/(agg[m].cnt||1),ez:agg[m].ez/(agg[m].cnt||1)}:null).filter(Boolean);
+}
+
+function filterDow(fac,year,metric){
+  let rows=db.tyd;
+  if(fac!=='all') rows=rows.filter(r=>r.fac_b===fac);
+  if(year!=='all') rows=rows.filter(r=>r.year===+year);
+  const agg={};
+  rows.forEach(r=>{
+    if(!agg[r.day_name]) agg[r.day_name]={day_name:r.day_name,day_of_week:r.day_of_week,v:0,cnt:0};
+    if(metric==='volume') agg[r.day_name].v+=r.avg_vehicles;
+    else if(metric==='violations') agg[r.day_name].v+=r.avg_violation_rate*100;
+    else agg[r.day_name].v+=r.avg_ezpass_ratio*100;
+    agg[r.day_name].cnt++;
+  });
+  return ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>agg[d]?{...agg[d],v:agg[d].v/(agg[d].cnt||1)}:null).filter(Boolean);
+}
+
+function filterYearSeries(fac,year){
+  let rows=db.tfy;
+  const facs=fac==='all'?['Bayonne','GWB Lower','GWB PIP','GWB Upper','Goethals','Holland','Lincoln','Outerbridge']:[fac];
+  let years=year==='all'?[...new Set(rows.map(r=>r.year))].sort():[+year];
+  if(year!=='all') years=[...new Set(rows.map(r=>r.year))].sort(); // keep all years, just highlight
+  return{facs,years,rows};
+}
+
+function filterViolYear(fac,year){
+  let rows=db.tym;
+  if(fac!=='all') rows=rows.filter(r=>r.fac_b===fac);
+  // aggregate by year
+  const agg={};
+  rows.forEach(r=>{
+    if(!agg[r.year]) agg[r.year]={year:r.year,v:0,vr:0,ez:0,cnt:0};
+    agg[r.year].v+=r.total_violations;
+    agg[r.year].vr+=r.avg_violation_rate;
+    agg[r.year].ez+=r.avg_ezpass_ratio;
+    agg[r.year].cnt++;
+  });
+  let arr=Object.values(agg).sort((a,b)=>a.year-b.year);
+  if(year!=='all') arr=arr.filter(r=>r.year===+year);
+  return arr;
+}
+
+function filterViolFac(fac,year){
+  let rows=db.tym;
+  if(year!=='all') rows=rows.filter(r=>r.year===+year);
+  const agg={};
+  rows.forEach(r=>{
+    if(!agg[r.fac_b]) agg[r.fac_b]={fac_b:r.fac_b,v:0,vr:0,ez:0,cnt:0};
+    agg[r.fac_b].v+=r.total_violations;
+    agg[r.fac_b].vr+=r.avg_violation_rate;
+    agg[r.fac_b].ez+=r.avg_ezpass_ratio;
+    agg[r.fac_b].cnt++;
+  });
+  let arr=Object.values(agg).sort((a,b)=>b.v-a.v);
+  if(fac!=='all') arr=arr.filter(r=>r.fac_b===fac);
+  return arr;
+}
+
+async function init(){
+  const [fi,tfy,cp,fc,tym,tyd,ezf,ezy,ezm]=await Promise.all([
+    ft('feature_importance'),ft('traffic_by_facility_year'),ft('congestion_pricing'),
+    ft('forecasts'),ft('traffic_by_fac_year_month'),ft('traffic_by_fac_year_dow'),
+    ft('ezpass_by_facility'),ft('ezpass_by_year'),ft('ezpass_by_month'),
+  ]);
+  Object.assign(db,{fi,tfy,cp,fc,tym,tyd,ezf,ezy,ezm});
+  document.getElementById('loading-msg').style.display='none';
+  buildQ1();buildQ2();buildQ3();buildQ4();buildQ5();
+  showQuestion('q1');
+}
+
+// ---- Q1 (static - not filter-dependent) ----
+function buildQ1(){
+  const s=[...db.fi].sort((a,b)=>a.rank-b.rank);
+  document.getElementById('fi-tbody').innerHTML=s.map(r=>`
+    <tr><td style="font-family:IBM Plex Mono;color:var(--text-muted)">${r.rank}</td>
+    <td><strong>${r.feature}</strong></td>
+    <td><span class="badge badge-y" style="font-size:9px">${r.category}</span></td>
+    <td style="font-family:IBM Plex Mono;color:var(--accent)">${r.importance}%</td>
+    <td><div class="ibar-wrap"><div class="ibar" style="width:${Math.round(r.importance*1.1)}px"></div></div></td></tr>`).join('');
+  const cats={};s.forEach(r=>cats[r.category]=(cats[r.category]||0)+r.importance);
+  mkChart('fiPieChart','doughnut',{labels:Object.keys(cats),datasets:[{data:Object.values(cats),backgroundColor:C.map(c=>c+'cc'),borderColor:'#1a1a1a',borderWidth:2}]},
+    {responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{color:'#9a9080',font:{size:10},boxWidth:10}}}});
+  const top5=s.slice(0,5);
+  mkChart('fiBarChart','bar',{labels:top5.map(r=>r.feature),datasets:[{label:'Importance %',data:top5.map(r=>r.importance),backgroundColor:C.slice(0,5).map(c=>c+'99'),borderColor:C.slice(0,5),borderWidth:1,borderRadius:4}]},
+    {...cOpts({legend:{display:false},tooltip:{callbacks:{label:c=>c.raw+'%'}}}),scales:{x:{ticks:{color:'#9a9080',font:{size:10}},grid:{color:'#222'}},y:{ticks:{color:'#6b6560',font:{size:10},callback:v=>v+'%'},grid:{color:'#222'}}}});
+}
+
+// ---- Q2 (filter-aware) ----
+function buildQ2(){
+  const fac=getFac(),year=getYear(),metric=getMetric();
+
+  // Chart 1: violations or ezpass by year (filtered by facility)
+  const vyData=filterViolYear(fac,'all');
+  if(metric==='ezpass'){
+    document.getElementById('q2-c1-title').textContent='EZPass Adoption by Year';
+    document.getElementById('q2-c1-sub').textContent=fac==='all'?'Network-wide avg EZPass ratio':`${fac} · Avg EZPass ratio per year`;
+    const ezy=[...db.ezy].sort((a,b)=>a.year-b.year);
+    // if facility selected, use granular
+    let labels,vals;
+    if(fac!=='all'){
+      const agg={};
+      db.tym.filter(r=>r.fac_b===fac).forEach(r=>{if(!agg[r.year]){agg[r.year]={v:0,c:0};}agg[r.year].v+=r.avg_ezpass_ratio;agg[r.year].c++;});
+      const arr=Object.entries(agg).sort((a,b)=>+a[0]-+b[0]);
+      labels=arr.map(a=>+a[0]);vals=arr.map(a=>(a[1].v/a[1].c*100).toFixed(1));
+    } else {labels=ezy.map(r=>r.year);vals=ezy.map(r=>(r.avg_ezpass_ratio*100).toFixed(1));}
+    mkChart('q2Chart1','line',{labels,datasets:[{label:'EZPass Ratio %',data:vals,borderColor:'#5a8a3c',backgroundColor:'#5a8a3c20',fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#5a8a3c'}]},
+      {...cOpts({legend:{display:false}}),scales:{x:{ticks:{color:'#6b6560',font:{size:10}},grid:{color:'#222'}},y:{ticks:{color:'#6b6560',font:{size:10},callback:v=>v+'%'},grid:{color:'#222'}}}});
+  } else {
+    document.getElementById('q2-c1-title').textContent='Violations by Year';
+    document.getElementById('q2-c1-sub').textContent=fac==='all'?'Total violations per year across network':`${fac} · Total violations per year`;
+    const highlighted=vyData.map(r=>year==='all'||r.year===+year?'#e8a02044':'#e8a02015');
+    const borderCol=vyData.map(r=>year==='all'||r.year===+year?'#e8a020':'#e8a02040');
+    mkChart('q2Chart1','bar',{labels:vyData.map(r=>r.year),datasets:[{label:'Total Violations',data:vyData.map(r=>r.v),backgroundColor:highlighted,borderColor:borderCol,borderWidth:1,borderRadius:3}]},
+      {...cOpts({legend:{display:false}}),scales:{x:{ticks:{color:'#6b6560',font:{size:10}},grid:{color:'#222'}},y:{ticks:{color:'#6b6560',font:{size:10},callback:v=>fmt(v)},grid:{color:'#222'}}}});
+  }
+
+  // Chart 2: by facility (filtered by year)
+  const vfData=filterViolFac('all',year);
+  if(metric==='ezpass'){
+    document.getElementById('q2-c2-title').textContent='EZPass Ratio by Facility';
+    document.getElementById('q2-c2-sub').textContent=year==='all'?'All years · Avg EZPass ratio':`${year} · Avg EZPass ratio per facility`;
+    const agg={};
+    db.tym.filter(r=>year==='all'||r.year===+year).forEach(r=>{if(!agg[r.fac_b]){agg[r.fac_b]={v:0,c:0};}agg[r.fac_b].v+=r.avg_ezpass_ratio;agg[r.fac_b].c++;});
+    const arr=Object.entries(agg).sort((a,b)=>b[1].v/b[1].c-a[1].v/a[1].c);
+    const hlBg=arr.map(a=>fac==='all'||a[0]===fac?C[arr.indexOf(a)%C.length]+'66':'#444');
+    mkChart('q2Chart2','bar',{labels:arr.map(a=>a[0]),datasets:[{label:'EZPass Ratio %',data:arr.map(a=>(a[1].v/a[1].c*100).toFixed(1)),backgroundColor:hlBg,borderColor:arr.map(a=>fac==='all'||a[0]===fac?C[arr.indexOf(a)%C.length]:'#555'),borderWidth:1,borderRadius:3}]},
+      {...cOpts({legend:{display:false}}),scales:{x:{ticks:{color:'#9a9080',font:{size:10}},grid:{color:'#222'}},y:{ticks:{color:'#6b6560',font:{size:10},callback:v=>v+'%'},grid:{color:'#222'}}}});
+  } else {
+    document.getElementById('q2-c2-title').textContent='Violations by Facility';
+    document.getElementById('q2-c2-sub').textContent=year==='all'?'All years · Total violations per crossing':`${year} · Total violations per crossing`;
+    const hlBg=vfData.map(r=>fac==='all'||r.fac_b===fac?C[vfData.indexOf(r)%C.length]+'55':'#333');
+    const hlBorder=vfData.map(r=>fac==='all'||r.fac_b===fac?C[vfData.indexOf(r)%C.length]:'#444');
+    mkChart('q2Chart2','bar',{labels:vfData.map(r=>r.fac_b),datasets:[{label:'Total Violations',data:vfData.map(r=>r.v),backgroundColor:hlBg,borderColor:hlBorder,borderWidth:1,borderRadius:3}]},
+      {...cOpts({legend:{display:false}}),indexAxis:'y',scales:{x:{ticks:{color:'#6b6560',font:{size:10},callback:v=>fmt(v)},grid:{color:'#222'}},y:{ticks:{color:'#9a9080',font:{size:10}},grid:{color:'#222'}}}});
+  }
+
+  // Chart 3: by month (filtered by facility + year)
+  const mData=filterMonth(fac,year,metric);
+  if(metric==='ezpass'){
+    document.getElementById('q2-c3-title').textContent='EZPass Ratio by Month';
+    document.getElementById('q2-c3-sub').textContent='Seasonal variation in EZPass adoption';
+    mkChart('q2Chart3','line',{labels:mData.map(r=>r.month_name),datasets:[{label:'EZPass Ratio %',data:mData.map(r=>(r.ez*100).toFixed(1)),borderColor:'#7a6aaa',backgroundColor:'#7a6aaa20',fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#7a6aaa'}]},
+      {...cOpts({legend:{display:false}}),scales:{x:{ticks:{color:'#6b6560',font:{size:10}},grid:{color:'#222'}},y:{ticks:{color:'#6b6560',font:{size:10},callback:v=>v+'%'},grid:{color:'#222'}}}});
+  } else {
+    document.getElementById('q2-c3-title').textContent='Violation Rate by Month';
+    document.getElementById('q2-c3-sub').textContent=`${fac==='all'?'All facilities':fac} · ${year==='all'?'All years':year}`;
+    mkChart('q2Chart3','line',{labels:mData.map(r=>r.month_name),datasets:[{label:'Avg Violation Rate %',data:mData.map(r=>(r.vr*100).toFixed(3)),borderColor:'#c45c1a',backgroundColor:'#c45c1a20',fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#c45c1a'}]},
+      {...cOpts({legend:{display:false}}),scales:{x:{ticks:{color:'#6b6560',font:{size:10}},grid:{color:'#222'}},y:{ticks:{color:'#6b6560',font:{size:10},callback:v=>v+'%'},grid:{color:'#222'}}}});
+  }
+}
+
+// ---- Q3 (filter-aware) ----
+function buildQ3(){
+  const fac=getFac(),year=getYear(),metric=getMetric();
+
+  // Chart 1: year trend (filtered by facility)
+  if(metric==='ezpass'){
+    const agg={};
+    db.tym.filter(r=>fac==='all'||r.fac_b===fac).forEach(r=>{if(!agg[r.year]){agg[r.year]={v:0,c:0};}agg[r.year].v+=r.avg_ezpass_ratio;agg[r.year].c++;});
+    const arr=Object.entries(agg).sort((a,b)=>+a[0]-+b[0]);
+    document.getElementById('q3-c1-title').textContent='EZPass Adoption by Year';
+    document.getElementById('q3-c1-sub').textContent=fac==='all'?'Network-wide avg EZPass ratio':`${fac} · EZPass ratio trend`;
+    mkChart('q3Chart1','line',{labels:arr.map(a=>+a[0]),datasets:[{label:'EZPass Ratio %',data:arr.map(a=>(a[1].v/a[1].c*100).toFixed(1)),borderColor:'#5a8a3c',backgroundColor:'#5a8a3c20',fill:true,tension:0.4,pointRadius:4,pointBackgroundColor:'#5a8a3c'}]},
+      {...cOpts({legend:{display:false}}),scales:{x:{ticks:{color:'#6b6560',font:{size:10}},grid:{color:'#222'}},y:{ticks:{color:'#6b6560',font:{size:10},callback:v=>v+'%'},grid:{color:'#222'}}}});
+  } else if(metric==='violations'){
+    const agg={};
+    db.tym.filter(r=>fac==='all'||r.fac_b===fac).forEach(r=>{if(!agg[r.year]){agg[r.year]={v:0,c:0};}agg[r.year].v+=r.total_violations;agg[r.year].c++;});
+    const arr=Object.entries(agg).sort((a,b)=>+a[0]-+b[0]);
+    document.getElementById('q3-c1-title').textContent='Violations by Year';
+    document.getElementById('q3-c1-sub').textContent=fac==='all'?'Total violations across network':`${fac} · Total violations per year`;
+    const hl=arr.map(a=>year==='all'||+a[0]===+year?'#c45c1a44':'#c45c1a15');
+    const hlB=arr.map(a=>year==='all'||+a[0]===+year?'#c45c1a':'#c45c1a40');
+    mkChart('q3Chart1','bar',{labels:arr.map(a=>+a[0]),datasets:[{label:'Total Violations',data:arr.map(a=>a[1].v),backgroundColor:hl,borderColor:hlB,borderWidth:1,borderRadius:3}]},
+      {...cOpts({legend:{display:false}}),scales:{x:{ticks:{color:'#6b6560',font:{size:10}},grid:{color:'#222'}},y:{ticks:{color:'#6b6560',font:{size:10},callback:v=>fmt(v)},grid:{color:'#222'}}}});
+  } else {
+    const agg={};
+    db.tym.filter(r=>fac==='all'||r.fac_b===fac).forEach(r=>{if(!agg[r.year]){agg[r.year]={v:0,c:0};}agg[r.year].v+=r.total_vehicles;agg[r.year].c++;});
+    const arr=Object.entries(agg).sort((a,b)=>+a[0]-+b[0]);
+    document.getElementById('q3-c1-title').textContent=fac==='all'?'Network Traffic by Year':`${fac} · Traffic by Year`;
+    document.getElementById('q3-c1-sub').textContent=fac==='all'?'Total vehicles across all facilities (2020 highlighted)':`${fac} · Total vehicles per year`;
+    const hl=arr.map(a=>+a[0]===2020?'#c4404055':(year==='all'||+a[0]===+year?'#e8a02033':'#e8a02015'));
+    const hlB=arr.map(a=>+a[0]===2020?'#c44040':(year==='all'||+a[0]===+year?'#e8a020':'#e8a02040'));
+    mkChart('q3Chart1','bar',{labels:arr.map(a=>+a[0]),datasets:[{label:'Total Vehicles',data:arr.map(a=>a[1].v),backgroundColor:hl,borderColor:hlB,borderWidth:1,borderRadius:3}]},
+      {...cOpts({legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)+' vehicles'}}}),scales:{x:{ticks:{color:'#6b6560',font:{size:10}},grid:{color:'#222'}},y:{ticks:{color:'#6b6560',font:{size:10},callback:v=>fmt(v)},grid:{color:'#222'}}}});
+  }
+
+  // Chart 2: monthly (filtered by fac + year)
+  const mData=filterMonth(fac,year,metric);
+  if(metric==='ezpass'){
+    document.getElementById('q3-c2-title').textContent='EZPass Ratio by Month';
+    document.getElementById('q3-c2-sub').textContent=`${fac==='all'?'All facilities':fac} · ${year==='all'?'All years':year}`;
+    mkChart('q3Chart2','line',{labels:mData.map(r=>r.month_name),datasets:[{label:'EZPass Ratio %',data:mData.map(r=>(r.ez*100).toFixed(1)),borderColor:'#7a6aaa',backgroundColor:'#7a6aaa20',fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#7a6aaa'}]},
+      {...cOpts({legend:{display:false}}),scales:{x:{ticks:{color:'#6b6560',font:{size:10}},grid:{color:'#222'}},y:{ticks:{color:'#6b6560',font:{size:10},callback:v=>v+'%'},grid:{color:'#222'}}}});
+  } else if(metric==='violations'){
+    document.getElementById('q3-c2-title').textContent='Violation Rate by Month';
+    document.getElementById('q3-c2-sub').textContent=`${fac==='all'?'All facilities':fac} · ${year==='all'?'All years':year}`;
+    mkChart('q3Chart2','line',{labels:mData.map(r=>r.month_name),datasets:[{label:'Avg Violation Rate %',data:mData.map(r=>(r.vr*100).toFixed(3)),borderColor:'#c45c1a',backgroundColor:'#c45c1a20',fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#c45c1a'}]},
+      {...cOpts({legend:{display:false}}),scales:{x:{ticks:{color:'#6b6560',font:{size:10}},grid:{color:'#222'}},y:{ticks:{color:'#6b6560',font:{size:10},callback:v=>v+'%'},grid:{color:'#222'}}}});
+  } else {
+    document.getElementById('q3-c2-title').textContent='Avg Traffic by Month';
+    document.getElementById('q3-c2-sub').textContent=`${fac==='all'?'All facilities':fac} · ${year==='all'?'All years':year}`;
+    mkChart('q3Chart2','line',{labels:mData.map(r=>r.month_name),datasets:[{label:'Avg Vehicles/Day',data:mData.map(r=>r.v),borderColor:'#5a8a3c',backgroundColor:'#5a8a3c20',fill:true,tension:0.4,pointBackgroundColor:'#5a8a3c',pointRadius:3}]},
+      {...cOpts({legend:{display:false}}),scales:{x:{ticks:{color:'#6b6560',font:{size:10}},grid:{color:'#222'}},y:{ticks:{color:'#6b6560',font:{size:10},callback:v=>fmt(v)},grid:{color:'#222'}}}});
+  }
+
+  // DOW chart (filtered by fac + year)
+  const dowData=filterDow(fac,year,metric);
+  const dowLabel=metric==='ezpass'?'EZPass Ratio %':metric==='violations'?'Avg Violation Rate %':'Avg Vehicles';
+  document.getElementById('q3-dow-sub').textContent=`${fac==='all'?'All facilities':fac} · ${year==='all'?'All years':year}`;
+  mkChart('trafficDowChart','bar',{labels:dowData.map(r=>r.day_name),datasets:[{label:dowLabel,data:dowData.map(r=>r.v),backgroundColor:'#7a6aaa55',borderColor:'#7a6aaa',borderWidth:1,borderRadius:3}]},
+    {...cOpts({legend:{display:false}}),scales:{x:{ticks:{color:'#6b6560',font:{size:10}},grid:{color:'#222'}},y:{ticks:{color:'#6b6560',font:{size:10},callback:v=>metric==='volume'?fmt(v):v+(metric==='violations'?'%':'%')},grid:{color:'#222'}}}});
+
+  // Facility over time (filtered)
+  buildFacYearChart(fac,year);
+}
+
+function buildFacYearChart(fac,year){
+  const facs=fac==='all'?['Bayonne','GWB Lower','GWB PIP','GWB Upper','Goethals','Holland','Lincoln','Outerbridge']:[fac];
+  const years=[...new Set(db.tfy.map(r=>r.year))].sort();
+  const datasets=facs.map((f,i)=>({
+    label:f,
+    data:years.map(y=>{const r=db.tfy.find(r=>r.fac_b===f&&r.year===y);return r?r.total_vehicles:null;}),
+    borderColor:year==='all'||true?C[i%C.length]:C[i%C.length],
+    backgroundColor:C[i%C.length]+'20',
+    segment:{borderColor:ctx=>year!=='all'&&ctx.p0.parsed.x!==years.indexOf(+year)&&ctx.p1.parsed.x!==years.indexOf(+year)?C[i%C.length]+'40':C[i%C.length]},
+    fill:facs.length===1,tension:0.3,pointRadius:years.map(y=>year==='all'||y===+year?4:2),
+    pointBackgroundColor:years.map(y=>year==='all'||y===+year?C[i%C.length]:C[i%C.length]+'55'),
+  }));
+  mkChart('facYearChart','line',{labels:years,datasets},
+    {...cOpts({tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}),scales:{x:{ticks:{color:'#6b6560',font:{size:10}},grid:{color:'#222'}},y:{ticks:{color:'#6b6560',font:{size:10},callback:v=>fmt(v)},grid:{color:'#222'}}}});
+}
+
+// ---- Q4 (static congestion pricing) ----
+function buildQ4(){
+  const facs=['Bayonne','GWB Lower','GWB PIP','GWB Upper','Goethals','Holland','Lincoln','Outerbridge'];
+  mkChart('cpChart','bar',{labels:facs,datasets:[2023,2024,2025].map((y,i)=>({label:y+(y===2025?' (annualized)':''),data:facs.map(f=>{const r=db.cp.find(r=>r.fac_b===f&&r.year===y);return r?r.total_vehicles:0;}),backgroundColor:C[i]+'88',borderColor:C[i],borderWidth:1,borderRadius:3}))},
+    {...cOpts({tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}),scales:{x:{ticks:{color:'#6b6560',font:{size:10}},grid:{color:'#222'}},y:{ticks:{color:'#6b6560',font:{size:10},callback:v=>fmt(v)},grid:{color:'#222'}}}});
+  const changes=facs.map(f=>{const r24=db.cp.find(r=>r.fac_b===f&&r.year===2024);const r25=db.cp.find(r=>r.fac_b===f&&r.year===2025);if(!r24||!r25)return 0;return+((( r25.total_vehicles-r24.total_vehicles)/r24.total_vehicles)*100).toFixed(1);});
+  mkChart('cpChangeChart','bar',{labels:facs,datasets:[{label:'% Change 2024→2025',data:changes,backgroundColor:changes.map(v=>v>=0?'#5a8a3c44':'#c4404044'),borderColor:changes.map(v=>v>=0?'#5a8a3c':'#c44040'),borderWidth:1,borderRadius:3}]},
+    {...cOpts({legend:{display:false}}),scales:{x:{ticks:{color:'#6b6560',font:{size:10}},grid:{color:'#222'}},y:{ticks:{color:'#6b6560',font:{size:10},callback:v=>v+'%'},grid:{color:'#222'}}}});
+}
+
+// ---- Q5 (filter by facility) ----
+function buildQ5(){
+  const s=[...db.fc].sort((a,b)=>a.year-b.year);
+  document.getElementById('forecast-tbody').innerHTML=s.map(r=>`
+    <tr><td style="font-family:IBM Plex Mono;font-weight:600">${r.year}</td>
+    <td>${(r.bayonne/1e6).toFixed(2)}</td><td>${(r.gwb_lower/1e6).toFixed(2)}</td>
+    <td>${(r.gwb_upper/1e6).toFixed(2)}</td><td>${(r.goethals/1e6).toFixed(2)}</td>
+    <td>${(r.holland/1e6).toFixed(2)}</td><td>${(r.lincoln/1e6).toFixed(2)}</td>
+    <td>${(r.outerbridge/1e6).toFixed(2)}</td></tr>`).join('');
+  buildForecastChart(getFac());
+}
+
+function buildForecastChart(fac){
+  const s=[...db.fc].sort((a,b)=>a.year-b.year);
+  const map={Bayonne:'bayonne','GWB Lower':'gwb_lower','GWB Upper':'gwb_upper',Goethals:'goethals',Holland:'holland',Lincoln:'lincoln',Outerbridge:'outerbridge'};
+  const sel=fac==='all'?Object.keys(map):(map[fac]?[fac]:[]);
+  mkChart('forecastChart','line',{labels:s.map(r=>r.year),datasets:sel.map((f,i)=>({label:f,data:s.map(r=>r[map[f]]),borderColor:C[i%C.length],backgroundColor:C[i%C.length]+'20',fill:sel.length===1,tension:0.3,pointRadius:4,pointBackgroundColor:C[i%C.length]}))},
+    {...cOpts({tooltip:{callbacks:{label:c=>c.dataset.label+': '+(c.raw/1e6).toFixed(2)+'M'}}}),scales:{x:{ticks:{color:'#6b6560',font:{size:10}},grid:{color:'#222'}},y:{ticks:{color:'#6b6560',font:{size:10},callback:v=>(v/1e6).toFixed(1)+'M'},grid:{color:'#222'}}}});
+}
+
+// ---- Filters ----
+function applyFilters(){
+  const fac=getFac(),year=getYear();
+  if(currentQ==='q2')buildQ2();
+  else if(currentQ==='q3')buildQ3();
+  else if(currentQ==='q5')buildForecastChart(fac);
+  updateInsight(currentQ,fac,year);
+}
+
+function resetFilters(){
+  document.getElementById('f-facility').value='all';
+  document.getElementById('f-year').value='all';
+  document.getElementById('f-metric').value='volume';
+  applyFilters();
+}
+
+function updateInsight(q,fac,year){
+  const metric=getMetric();
+  const facLabel=fac==='all'?'all facilities':fac;
+  const yearLabel=year==='all'?'all years':year;
+  const ins={
+    q1:()=>{
+      if(fac==='GWB Upper')return`<strong>GWB Upper</strong> averages 28M+ vehicles/year — facility identity drives 75.18% of predictive power. Highest-volume crossing in the network.`;
+      if(fac==='Bayonne')return`<strong>Bayonne</strong> is the lowest-volume facility (~4.3M/yr) but shows the most consistent upward growth. High EZPass adoption keeps violations low.`;
+      if(fac==='Holland')return`<strong>Holland Tunnel</strong> suffered the steepest COVID drop (−26.83% in 2020) and showed a full V-shaped recovery by 2022.`;
+      if(year==='2020')return`In <strong>2020</strong>, COVID-19 caused the largest network-wide decline — Holland −26.83%, Lincoln −26.18%, GWB Lower −19.38%.`;
+      return`Top 5 factors: <strong>Facility Identity (75.18%)</strong>, EZPass Ratio (13.04%), Gas Price (3.31%), Day of Year (2.12%), Year/Trend (2.12%). H2O Regression · Stacked Ensemble · R² 0.9791.`;
+    },
+    q2:()=>{
+      if(metric==='ezpass')return`<strong>EZPass Ratio</strong> is the #2 predictor (13.04% importance). Showing data for <strong>${facLabel}</strong> · <strong>${yearLabel}</strong>. GWB PIP (86.9%) and Outerbridge (86.4%) have highest adoption; Holland (77.9%) and GWB Upper (76.9%) are lowest.`;
+      if(fac!=='all'&&year!=='all')return`Showing violation data for <strong>${fac}</strong> in <strong>${year}</strong>. H2O Classification · Gradient Boosting catches 96.79% of high-violation days with only 1.02% false alarms.`;
+      if(fac!=='all')return`Filtered to <strong>${fac}</strong> across all years. EZPass conversion campaigns at this facility directly reduce violations and enforcement costs.`;
+      if(year!=='all')return`Filtered to <strong>${year}</strong> across all facilities. H2O Classification · Gradient Boosting (AUC 0.9985) — 31.08% of facility-days are high-violation.`;
+      return`<strong>31.08%</strong> of facility-days are high-violation. H2O Classification · Gradient Boosting (AUC 0.9985) catches <strong>96.79%</strong> with only 1.02% false alarms — enabling proactive enforcement scheduling.`;
+    },
+    q3:()=>{
+      if(fac!=='all'&&year!=='all')return`Showing <strong>${metric==='volume'?'traffic volume':metric==='violations'?'violations':'EZPass ratio'}</strong> for <strong>${fac}</strong> in <strong>${year}</strong>. H2O Regression · Stacked Ensemble captures seasonal and weekly patterns through temporal features.`;
+      if(fac!=='all')return`Filtered to <strong>${fac}</strong> across all years. ${fac==='Bayonne'?'Bayonne doubled from 2.1M (2015) to 4.4M (2024) — unique sustained growth in the network.':fac==='Holland'?'Holland had the steepest COVID drop (−26.83%) and strongest V-shaped recovery.':'Select a year to drill into a specific period.'}`;
+      if(year==='2020')return`<strong>2020</strong> — COVID-19 structural break. Holland −26.83%, Lincoln −26.18%. Worst single-year decline across all 8 facilities.`;
+      return`Peak traffic: <strong>June–August</strong> every year. Lowest: January–February. Use facility and year filters to drill into specific patterns. H2O Regression · Stacked Ensemble.`;
+    },
+    q4:()=>{
+      if(fac==='GWB Upper')return`<strong>GWB Upper</strong> shows the only negative 2024 growth (−1.46%), consistent with early congestion pricing anticipation before January 2025 launch.`;
+      if(fac==='Bayonne')return`<strong>Bayonne</strong> is a likely congestion pricing beneficiary — sustained growth positions it as an alternative route for drivers avoiding Manhattan tolls.`;
+      return`NYC congestion pricing launched <strong>January 2025</strong>. GWB Upper only facility with negative 2024 growth (−1.46%). Bayonne and Goethals gaining — drivers shifting to non-priced routes.`;
+    },
+    q5:()=>{
+      if(fac==='Bayonne')return`<strong>Bayonne</strong> grows from 4.33M (2025) to 5.17M (2032) — only facility with consistent year-over-year forecast growth. AutoTS · Horizontal Ensemble.`;
+      if(fac==='GWB Upper')return`<strong>GWB Upper</strong> declines from 27.2M (2025) to 25.3M (2032) — 7% drop. AutoTS captures congestion pricing diversion as a structural downward trend.`;
+      if(fac==='Goethals')return`<strong>Goethals</strong> grows from 18.6M to 21.3M by 2032 — second-fastest growth, driven by congestion pricing beneficiary effects. AutoTS · Horizontal Ensemble.`;
+      return`<strong>AutoTS · Horizontal Ensemble</strong> (SMAPE 5.23%) — each facility assigned to its best base model. Bayonne <strong>+19.3%</strong>, GWB Upper <strong>−7.0%</strong> by 2032.`;
+    }
+  };
+  document.getElementById('insight-text').innerHTML=ins[q]?ins[q]():'Select a question.';
+  document.getElementById('model-tag').textContent=MODEL_TAGS[q]||'';
+}
+
+function showQuestion(q){
+  currentQ=q;
+  document.querySelectorAll('.q-view').forEach(v=>v.classList.remove('active'));
+  document.getElementById(q).classList.add('active');
+  if(q==='q2')buildQ2();
+  else if(q==='q3')buildQ3();
+  else if(q==='q5')buildForecastChart(getFac());
+  updateInsight(q,getFac(),getYear());
+}
+
+init();
+</script>
+</body>
+</html>
