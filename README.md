@@ -95,6 +95,8 @@ PortAuthority-NY-NJ-TrafficFlow_CapstoneProject/
 <img width="1154" height="551" alt="image" src="https://github.com/user-attachments/assets/e2f32b9b-0f02-4b03-8aca-e2f5653a5fa0" />
 
 
+
+
 <img width="726" height="415" alt="image" src="https://github.com/user-attachments/assets/6f64b704-c017-4b60-9501-d2f9b1c868f5" />
 
 
@@ -136,11 +138,15 @@ PortAuthority-NY-NJ-TrafficFlow_CapstoneProject/
 | 2028 | 4.69 | 23.29 | 26.50 | 19.75 | 15.94 | 18.40 | 15.15 |
 | 2032 | 5.17 | 23.94 | 25.29 | 21.27 | 16.03 | 17.78 | 15.28 |
 
-<!-- SCREENSHOT PLACEHOLDER -->
-> 📸 **[INSERT SCREENSHOT: AutoTS Jupyter output — best model summary and SMAPE]**
 
-<!-- SCREENSHOT PLACEHOLDER -->
-> 📸 **[INSERT SCREENSHOT: Forecast line chart from Jupyter — all facilities 2025–2032]**
+<img width="843" height="253" alt="image" src="https://github.com/user-attachments/assets/81f2d53d-6697-455e-bb2d-4046e77a8ed8" />
+
+<img width="818" height="110" alt="image" src="https://github.com/user-attachments/assets/5a3e73b1-394b-4e94-b776-66055363d65a" />
+
+
+
+<img width="877" height="362" alt="image" src="https://github.com/user-attachments/assets/3ae21f11-acb0-4d81-b887-de8073fb485b" />
+
 
 ---
 
@@ -161,14 +167,14 @@ H2O MOJO Models → FastAPI Backend → Docker Container → Kubernetes (Minikub
 | `/predict/classification` | POST | Predict high violation probability |
 | `/predict/timeseries` | POST | Return AutoTS facility forecast |
 
-<!-- SCREENSHOT PLACEHOLDER -->
-> 📸 **[INSERT SCREENSHOT: Terminal — `docker ps` showing container running]**
+<img width="893" height="464" alt="image" src="https://github.com/user-attachments/assets/c37fea40-db56-44fe-bccd-cf05ff9ed70a" />
 
-<!-- SCREENSHOT PLACEHOLDER -->
-> 📸 **[INSERT SCREENSHOT: Terminal — `kubectl get pods` showing pod 1/1 Running]**
 
-<!-- SCREENSHOT PLACEHOLDER -->
-> 📸 **[INSERT SCREENSHOT: FastAPI Swagger UI at localhost:8000/docs]**
+<img width="516" height="72" alt="image" src="https://github.com/user-attachments/assets/bf19f9f5-8675-4657-aa00-02af36dd2df0" />
+
+
+<img width="775" height="400" alt="image" src="https://github.com/user-attachments/assets/f34b2075-1f70-4040-9015-063afa9e9588" />
+
 
 ---
 
@@ -183,19 +189,8 @@ Built as a single-page HTML + JavaScript dashboard connected to a **Supabase** c
 - Filters for Facility, Year, and Metric Focus
 - Dynamic insight strip that updates based on selections
 - Model attribution on every chart
-- No scrolling — everything fits on one screen
 
-<!-- SCREENSHOT PLACEHOLDER -->
-> 📸 **[INSERT SCREENSHOT: Web App — Home page]**
-
-<!-- SCREENSHOT PLACEHOLDER -->
-> 📸 **[INSERT SCREENSHOT: Web App — Q1 Feature Importance page]**
-
-<!-- SCREENSHOT PLACEHOLDER -->
-> 📸 **[INSERT SCREENSHOT: Web App — Q3 Busiest Times page]**
-
-<!-- SCREENSHOT PLACEHOLDER -->
-> 📸 **[INSERT SCREENSHOT: Web App — Q5 Forecasts page]**
+<img width="1851" height="846" alt="image" src="https://github.com/user-attachments/assets/79a2d16f-52a6-4dfc-9be0-f786b1905c80" />
 
 ---
 
@@ -215,14 +210,12 @@ Interactive dashboard answering all 5 business questions. All datasets are embed
 | Forecasts | Facility usage 2025–2032 |
 | Deployment | Live web app link + team credits |
 
-<!-- SCREENSHOT PLACEHOLDER -->
-> 📸 **[INSERT SCREENSHOT: Power BI — Home page]**
+<img width="1293" height="804" alt="image" src="https://github.com/user-attachments/assets/736e29eb-4774-47ea-9b17-1e10527711de" />
 
-<!-- SCREENSHOT PLACEHOLDER -->
-> 📸 **[INSERT SCREENSHOT: Power BI — Q3 Busiest Times page]**
+<img width="1299" height="736" alt="image" src="https://github.com/user-attachments/assets/023a03f9-7b83-4750-a744-01d8304c7452" />
 
-<!-- SCREENSHOT PLACEHOLDER -->
-> 📸 **[INSERT SCREENSHOT: Power BI — Q5 Forecasts page]**
+<img width="1326" height="744" alt="image" src="https://github.com/user-attachments/assets/64bd545c-24e8-4ffd-9d3d-fa1816e12226" />
+
 
 ---
 
